@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Mon Business"/>
+<title>Mon Business</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link rel="manifest" href="manifest.json"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#F4F6F8;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;color:#1A1A2E}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:4px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useMemo,useRef,useCallback}=React;
+const LS="resell_v6";
+const PRELOADED_SALES=[
+  {title:"Electroniques 1",platform:"Vinted",buyPrice:0.01,salePrice:28,profit:27.9,date:"2026-01-20"},
+  {title:"Electroniques 2",platform:"Vinted",buyPrice:19.99,salePrice:24.99,profit:4.9,date:"2026-01-25"},
+  {title:"Electroniques 3",platform:"Vinted",buyPrice:0.01,salePrice:28.01,profit:27.9,date:"2026-01-28"},
+  {title:"Electroniques 4",platform:"Vinted",buyPrice:20,salePrice:70,profit:49.9,date:"2026-02-02"},
+  {title:"Setup et Ventes",platform:"Vinted",buyPrice:11,salePrice:71,profit:59.9,date:"2026-02-03"},
+  {title:"Electroniques 5",platform:"Vinted",buyPrice:20,salePrice:60,profit:39.9,date:"2026-02-05"},
+  {title:"Electroniques 6",platform:"Vinted",buyPrice:20,salePrice:40,profit:19.9,date:"2026-02-08"},
+  {title:"Ventes casquettes ancien compte",platform:"Vinted",buyPrice:17.95,salePrice:32.95,profit:14.9,date:"2026-02-14"},
+  {title:"Investissements rentable",platform:"Vinted",buyPrice:25.15,salePrice:125.15,profit:99.9,date:"2026-02-20"},
+  {title:"Investissements et Ventes IRL",platform:"Vinted",buyPrice:50,salePrice:250,profit:199.9,date:"2026-02-27"},
+  {title:"Sweat Nike Grey Style Nike Tech",platform:"Vinted",buyPrice:4.90,salePrice:17.90,profit:12.9,date:"2026-05-11"},
+  {title:"Chemise Zara Man Camo Shirt",platform:"Vinted",buyPrice:0.01,salePrice:6,profit:5.9,date:"2026-05-12"},
+  {title:"Casquette Sixth June Floral Cap",platform:"Vinted",buyPrice:0.10,salePrice:4.10,profit:3.9,date:"2026-05-13"},
+  {title:"Pull Lacoste V-Neck Red vintage",platform:"Vinted",buyPrice:3,salePrice:15,profit:11.9,date:"2026-05-14"},
+  {title:"Veste Footkorner Windbreaker y2k",platform:"Vinted",buyPrice:4.90,salePrice:20.90,profit:15.9,date:"2026-05-15"},
+  {title:"Jordan Jumpman White T-shirt Baggy XL",platform:"Vinted",buyPrice:3,salePrice:8,profit:4.9,date:"2026-05-16"},
+  {title:"Adidas T-shirt Vert Minimaliste Baggy XS",platform:"Vinted",buyPrice:1,salePrice:6,profit:4.9,date:"2026-05-17"},
+  {title:"Levis 629 Bootcut Jean Femme Y2K",platform:"Vinted",buyPrice:2,salePrice:15,profit:12.9,date:"2026-05-18"},
+  {title:"Polo Ralph Lauren Teddy Varsity Y2K",platform:"Vinted",buyPrice:0.01,salePrice:20,profit:19.9,date:"2026-05-19"},
+  {title:"Nike Vintage Sweat Blanc Rouge 90s",platform:"Vinted",buyPrice:6,salePrice:9,profit:2.9,date:"2026-05-20"},
+  {title:"Adidas Casquette Beige Creme Vintage",platform:"Vinted",buyPrice:2,salePrice:6,profit:3.9,date:"2026-05-21"},
+  {title:"Lacoste Casquette Noire 5 Panel",platform:"Vinted",buyPrice:0.01,salePrice:30,profit:29.9,date:"2026-05-22"},
+  {title:"Polo Ralph Lauren T-shirt Blanc size M",platform:"Vinted",buyPrice:3.90,salePrice:14.90,profit:10.9,date:"2026-05-23"},
+  {title:"Polo Ralph Lauren T-shirt negociable",platform:"Vinted",buyPrice:4,salePrice:13,profit:8.9,date:"2026-05-24"},
+  {title:"Nike Polo Colorblock Grey Red Y2K",platform:"Vinted",buyPrice:0.90,salePrice:6.90,profit:5.9,date:"2026-05-25"},
+  {title:"Ellesse T-shirt Bleu Vintage 90s",platform:"Vinted",buyPrice:1.10,salePrice:2.10,profit:0.9,date:"2026-05-26"},
+  {title:"Haut Nike Kangourou",platform:"Vinted",buyPrice:30,salePrice:150,profit:119.9,date:"2026-05-27"},
+  {title:"Bas Nike Trail Noir",platform:"Vinted",buyPrice:23,salePrice:100,profit:76.9,date:"2026-05-28"},
+].map((s,i)=>({...s,id:i+1}));
+const PRELOADED_ARTICLES=PRELOADED_SALES.map((s,i)=>({id:1000+i,title:s.title,platform:s.platform,status:"done",date:s.date}));
+const DEFAULT={sales:PRELOADED_SALES,articles:PRELOADED_ARTICLES,tasks:[],weekGoal:7,monthGoal:30,alerts:[]};
+const load=()=>{try{const r=localStorage.getItem(LS);return r?{...DEFAULT,...JSON.parse(r)}:DEFAULT;}catch{return DEFAULT;}};
+const persist=s=>localStorage.setItem(LS,JSON.stringify(s));
+const todayStr=()=>new Date().toISOString().split("T")[0];
+const weekStart=()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().split("T")[0];};
+const monthStart=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`;};
+const f0=n=>Math.abs(Number(n)).toFixed(0);
+const f2=n=>Number(n).toFixed(2);
+const PLATFORMS=["Vinted","eBay","Autre"];
+const MONTH_FR=["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aou","Sep","Oct","Nov","Dec"];
+const DAY_FR=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+const dayFR=()=>DAY_FR[new Date().getDay()];
+const dateFR=()=>new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+const STATUS_META={todo:{label:"A faire",bg:"#F3F4F6",color:"#6B7280"},inprogress:{label:"En cours",bg:"#FEF3C7",color:"#D97706"},done:{label:"Publie",bg:"#D1FAE5",color:"#059669"}};
+const PLANNING={
+  Lundi:{school:"8h05-17h25",slots:[{t:"6h30-6h45",a:"TikTok actif - veille"},{t:"17h30-18h",a:"Decompresser + manger"},{t:"18h-18h40",a:"Photos + pub article 1"},{t:"18h40-19h20",a:"Photos + pub article 2"},{t:"19h20-20h10",a:"Devoirs"},{t:"20h10-20h30",a:"Messages Vinted/eBay"},{t:"20h30",a:"TikTok libre"}]},
+  Mardi:{school:"8h05-17h25",slots:[{t:"6h30-6h45",a:"TikTok actif"},{t:"17h30-17h55",a:"Messages acheteurs"},{t:"18h-20h30",a:"FOOT"},{t:"20h30-21h10",a:"Devoirs"},{t:"21h10",a:"TikTok libre"}]},
+  Mercredi:{school:"8h05-12h55",slots:[{t:"6h30-6h45",a:"TikTok actif"},{t:"13h-13h30",a:"Manger + pause"},{t:"13h30-14h10",a:"Photos + pub article 3"},{t:"14h10-14h50",a:"Photos + pub article 4"},{t:"14h50-15h30",a:"Devoirs"},{t:"15h30-16h",a:"TikTok sourcing"},{t:"16h-16h40",a:"Photos + pub article 5"},{t:"16h40-17h20",a:"Devoirs suite"},{t:"17h20",a:"Temps libre"}]},
+  Jeudi:{school:"8h05-17h25",slots:[{t:"6h30-6h45",a:"TikTok actif"},{t:"17h30-17h55",a:"Messages acheteurs"},{t:"18h-20h30",a:"FOOT"},{t:"20h30-21h10",a:"Devoirs"},{t:"21h10",a:"TikTok libre"}]},
+  Vendredi:{school:"8h05-17h25",slots:[{t:"6h30-6h45",a:"TikTok actif"},{t:"17h30-18h",a:"Decompresser"},{t:"18h-18h40",a:"Photos + pub article 6"},{t:"18h40-19h20",a:"Photos + pub article 7"},{t:"19h20-20h",a:"Devoirs"},{t:"20h-20h30",a:"Bilan semaine"},{t:"20h30",a:"TikTok libre"}]},
+  Samedi:{school:null,slots:[{t:"Matin",a:"Sourcing fournisseurs"},{t:"11h-11h40",a:"Photos + pub article 8"},{t:"11h40-12h20",a:"Photos + pub article 9"},{t:"Apres-midi",a:"Devoirs"},{t:"Soir",a:"Temps libre"}]},
+  Dimanche:{school:null,slots:[{t:"Matin",a:"Repondre messages"},{t:"10h-10h40",a:"Photos + pub article 10"},{t:"Apres-midi",a:"Devoirs"},{t:"Soir",a:"Planifier la semaine"}]},
+};
+function calcStreak(sales){let s=0;const d=new Date();while(true){const k=d.toISOString().split("T")[0];if(sales.some(x=>x.date===k)){s++;d.setDate(d.getDate()-1);}else break;}return s;}
+
+function TradingChart({sales}){
+  const[tooltip,setTooltip]=useState(null);
+  const svgRef=useRef(null);
+  const now=new Date();
+  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const todayN=now.getDate();
+  const days=useMemo(()=>Array.from({length:daysInMonth},(_,i)=>{
+    const day=i+1;
+    const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const ds=sales.filter(s=>s.date===key);
+    return{day,key,profit:ds.reduce((a,s)=>a+Number(s.profit),0),count:ds.length,isFuture:day>todayN};
+  }),[sales]);
+  let cum=0;
+  const cumDays=days.map(d=>{if(!d.isFuture){cum+=d.profit;}return{...d,cum};});
+  const pastDays=cumDays.filter(d=>!d.isFuture);
+  const maxCum=Math.max(...pastDays.map(d=>d.cum),1);
+  const minCum=Math.min(...pastDays.map(d=>d.cum),0);
+  const range=maxCum-minCum||1;
+  const totalMonth=pastDays.reduce((a,d)=>a+d.profit,0);
+  const avgDaily=pastDays.length?totalMonth/pastDays.length:0;
+  const projection=Math.round(avgDaily*daysInMonth);
+  const W=340,H=110,padX=8,padY=10;
+  const xOf=i=>(padX+(i/(pastDays.length-1||1))*(W-padX*2));
+  const yOf=v=>(H-padY-(((v-minCum)/range)*(H-padY*2)));
+  const pts=pastDays.map((d,i)=>`${xOf(i)},${yOf(d.cum)}`).join(" ");
+  const trend=totalMonth>0?"up":"flat";
+  const handleMove=useCallback((e)=>{
+    if(!svgRef.current)return;
+    const rect=svgRef.current.getBoundingClientRect();
+    const clientX=(e.touches?e.touches[0].clientX:e.clientX);
+    const relX=clientX-rect.left;
+    const pct=relX/rect.width;
+    const idx=Math.round(pct*(pastDays.length-1));
+    const d=pastDays[Math.max(0,Math.min(idx,pastDays.length-1))];
+    if(d)setTooltip({...d,x:relX,idx});
+  },[pastDays]);
+  return(
+    <div style={{background:"#fff",borderRadius:18,border:"1px solid #E5E7EB",padding:"20px 18px",boxShadow:"0 2px 8px rgba(0,0,0,.07)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:".08em"}}>{MONTH_FR[now.getMonth()]} {now.getFullYear()}</div>
+          <div style={{fontWeight:900,fontSize:30,color:"#008060",lineHeight:1.1,marginTop:2}}>+{f0(totalMonth)}€</div>
+          <div style={{fontSize:12,color:"#6B7280",marginTop:3}}>Projection : <b style={{color:"#008060"}}>~{projection}€</b></div>
+        </div>
+        <div style={{background:trend==="up"?"#ECFDF5":"#F9FAFB",border:`1px solid ${trend==="up"?"#6EE7B7":"#E5E7EB"}`,borderRadius:99,padding:"4px 12px",display:"flex",alignItems:"center",gap:5}}>
+          <span style={{fontSize:14}}>{trend==="up"?"📈":"➡️"}</span>
+          <span style={{fontSize:12,fontWeight:700,color:trend==="up"?"#059669":"#6B7280"}}>{trend==="up"?"En hausse":"Stable"}</span>
+        </div>
+      </div>
+      <div style={{position:"relative",touchAction:"none"}}>
+        <svg ref={svgRef} width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible",display:"block",cursor:"crosshair"}}
+          onMouseMove={handleMove} onTouchMove={handleMove}
+          onMouseLeave={()=>setTooltip(null)} onTouchEnd={()=>setTimeout(()=>setTooltip(null),2000)}>
+          <defs>
+            <linearGradient id="grd" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#008060" stopOpacity=".2"/>
+              <stop offset="100%" stopColor="#008060" stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          {[0.25,0.5,0.75].map(f=>(
+            <line key={f} x1={padX} x2={W-padX} y1={padY+(1-f)*(H-padY*2)} y2={padY+(1-f)*(H-padY*2)} stroke="#F3F4F6" strokeWidth="1"/>
+          ))}
+          {pastDays.length>1&&<polygon points={`${xOf(0)},${yOf(minCum)} ${pts} ${xOf(pastDays.length-1)},${yOf(minCum)}`} fill="url(#grd)"/>}
+          {pastDays.length>1&&<polyline points={pts} fill="none" stroke="#008060" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
+          {pastDays.filter(d=>d.profit>0).map((d)=>{
+            const i=pastDays.indexOf(d);
+            return <circle key={d.day} cx={xOf(i)} cy={yOf(d.cum)} r="4" fill="#008060" stroke="#fff" strokeWidth="2"/>;
+          })}
+          {tooltip&&(
+            <React.Fragment>
+              <line x1={xOf(tooltip.idx)} x2={xOf(tooltip.idx)} y1={padY} y2={H-padY} stroke="#008060" strokeWidth="1.5" strokeDasharray="3,2"/>
+              <circle cx={xOf(tooltip.idx)} cy={yOf(tooltip.cum)} r="6" fill="#008060" stroke="#fff" strokeWidth="2.5"/>
+            </React.Fragment>
+          )}
+        </svg>
+        {tooltip&&(
+          <div style={{position:"absolute",top:0,left:Math.min(tooltip.x+8,180),background:"#1A1A2E",color:"#fff",borderRadius:10,padding:"10px 14px",fontSize:12,pointerEvents:"none",zIndex:10,boxShadow:"0 4px 16px rgba(0,0,0,.2)",minWidth:140}}>
+            <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>{tooltip.day} {MONTH_FR[now.getMonth()]}</div>
+            {tooltip.profit>0?(
+              <React.Fragment>
+                <div style={{color:"#6EE7B7"}}>Profit : <b>+{f0(tooltip.profit)}€</b></div>
+                <div style={{color:"#94A3B8",marginTop:2}}>{tooltip.count} vente{tooltip.count>1?"s":""}</div>
+                <div style={{color:"#94A3B8"}}>Cumule : +{f0(tooltip.cum)}€</div>
+                <div style={{marginTop:4,color:tooltip.profit>=avgDaily?"#6EE7B7":"#FCA5A5",fontSize:11}}>
+                  {tooltip.profit>=avgDaily?"Au-dessus moy.":"En dessous moy."}
+                </div>
+              </React.Fragment>
+            ):(
+              <div style={{color:"#6B7280"}}>Pas de vente</div>
+            )}
+          </div>
+        )}
+      </div>
+      <div style={{display:"flex",gap:2,alignItems:"flex-end",height:28,marginTop:12}}>
+        {days.map((d,i)=>{
+          const maxP=Math.max(...days.map(x=>x.profit),1);
+          const isToday=d.day===todayN;
+          return <div key={i} style={{flex:1,background:d.isFuture?"#F9FAFB":d.profit>0?"#008060":"#E5E7EB",borderRadius:3,height:d.profit>0?`${Math.max((d.profit/maxP)*26,4)}px`:"3px",border:isToday?"2px solid #B8860B":"none"}}/>;
+        })}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#9CA3AF",marginTop:4}}>
+        <span>1 {MONTH_FR[now.getMonth()]}</span>
+        <span style={{color:"#B8860B",fontWeight:700}}>Auj.</span>
+        <span>{daysInMonth}</span>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const[state,setState]=useState(load);
+  const[tab,setTab]=useState("home");
+  const[toast,setToast]=useState(null);
+  const[saleForm,setSaleForm]=useState({title:"",platform:"Vinted",buyPrice:"",salePrice:"",date:todayStr()});
+  const[artForm,setArtForm]=useState({title:"",platform:"Vinted"});
+  const[taskInput,setTaskInput]=useState("");
+  const[alertForm,setAlertForm]=useState({text:"",date:todayStr()});
+  const[goalEdit,setGoalEdit]=useState(false);
+  const[goalVals,setGoalVals]=useState({week:state.weekGoal,month:state.monthGoal});
+  const[calcBuy,setCalcBuy]=useState("");
+  const[calcSell,setCalcSell]=useState("");
+  const[marginTarget,setMarginTarget]=useState("30");
+  useEffect(()=>{persist(state);},[state]);
+  const upd=fn=>setState(s=>fn(JSON.parse(JSON.stringify(s))));
+  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
+  const{sales,articles,tasks,alerts,weekGoal,monthGoal}=state;
+  const tSales=sales.filter(s=>s.date===todayStr());
+  const wSales=sales.filter(s=>s.date>=weekStart());
+  const mSales=sales.filter(s=>s.date>=monthStart());
+  const totalCA=sales.reduce((a,s)=>a+Number(s.salePrice),0);
+  const totalProfit=sales.reduce((a,s)=>a+Number(s.profit),0);
+  const tProfit=tSales.reduce((a,s)=>a+Number(s.profit),0);
+  const wProfit=wSales.reduce((a,s)=>a+Number(s.profit),0);
+  const mProfit=mSales.reduce((a,s)=>a+Number(s.profit),0);
+  const mCA=mSales.reduce((a,s)=>a+Number(s.salePrice),0);
+  const avgSale=sales.length?totalProfit/sales.length:0;
+  const todayOk=tSales.length>=1;
+  const streak=useMemo(()=>calcStreak(sales),[sales]);
+  const currentDay=dayFR();
+  const dueAlerts=(alerts||[]).filter(a=>a.date===todayStr()&&!a.done);
+  const todayTasks=tasks.filter(t=>t.date===todayStr());
+  const now=new Date();
+  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const daysElapsed=now.getDate();
+  const daysWithSale=new Set(mSales.map(s=>s.date)).size;
+  const consistencyRate=daysElapsed?Math.round(daysWithSale/daysElapsed*100):0;
+  const avgDaily=mProfit/(daysElapsed||1);
+  const projection=Math.round(avgDaily*daysInMonth);
+  const totalArt=articles.length;
+  const soldArt=articles.filter(a=>a.status==="done").length;
+  const sellThrough=totalArt?Math.round(soldArt/totalArt*100):0;
+  const calcProfit=calcBuy&&calcSell?parseFloat(calcSell)-parseFloat(calcBuy)-0.10:null;
+  const calcPct=calcProfit&&calcSell?(calcProfit/parseFloat(calcSell)*100):null;
+  const calcOk=calcPct!==null&&calcPct>=parseFloat(marginTarget);
+  const monthlyData=useMemo(()=>{
+    return Array.from({length:6},(_,i)=>{
+      const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);
+      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      const ms=sales.filter(s=>s.date.startsWith(key));
+      return{label:MONTH_FR[d.getMonth()],profit:ms.reduce((a,s)=>a+Number(s.profit),0),ca:ms.reduce((a,s)=>a+Number(s.salePrice),0),count:ms.length};
+    });
+  },[sales]);
+  const maxBar=Math.max(...monthlyData.map(m=>m.profit),1);
+  const addSale=()=>{
+    if(!saleForm.title||!saleForm.buyPrice||!saleForm.salePrice)return toast_("Remplis tous les champs","error");
+    const profit=parseFloat(saleForm.salePrice)-parseFloat(saleForm.buyPrice)-0.10;
+    upd(s=>{s.sales=[{...saleForm,buyPrice:parseFloat(saleForm.buyPrice),salePrice:parseFloat(saleForm.salePrice),profit,id:Date.now()},...s.sales];return s;});
+    setSaleForm({title:"",platform:"Vinted",buyPrice:"",salePrice:"",date:todayStr()});
+    toast_("Vente enregistree !");
+  };
+  const addArt=()=>{
+    if(!artForm.title)return toast_("Donne un nom","error");
+    upd(s=>{s.articles=[{...artForm,id:Date.now(),status:"todo",date:todayStr()},...s.articles];return s;});
+    setArtForm({title:"",platform:"Vinted"});toast_("Article ajoute !");
+  };
+  const cycleStatus=id=>upd(s=>{const o=["todo","inprogress","done"];s.articles=s.articles.map(a=>a.id===id?{...a,status:o[(o.indexOf(a.status)+1)%3]}:a);return s;});
+  const delArt=id=>upd(s=>{s.articles=s.articles.filter(a=>a.id!==id);return s;});
+  const addTask=()=>{if(!taskInput.trim())return;upd(s=>{s.tasks=[{id:Date.now(),text:taskInput.trim(),done:false,date:todayStr()},...s.tasks];return s;});setTaskInput("");};
+  const toggleTask=id=>upd(s=>{s.tasks=s.tasks.map(t=>t.id===id?{...t,done:!t.done}:t);return s;});
+  const delTask=id=>upd(s=>{s.tasks=s.tasks.filter(t=>t.id!==id);return s;});
+  const addAlert=()=>{if(!alertForm.text.trim())return toast_("Decris le rappel","error");upd(s=>{s.alerts=[{id:Date.now(),...alertForm,done:false},...(s.alerts||[])];return s;});setAlertForm({text:"",date:todayStr()});toast_("Rappel ajoute !");};
+  const doneAlert=id=>upd(s=>{s.alerts=(s.alerts||[]).map(a=>a.id===id?{...a,done:true}:a);return s;});
+  const saveGoals=()=>{upd(s=>{s.weekGoal=goalVals.week;s.monthGoal=goalVals.month;return s;});setGoalEdit(false);toast_("Objectifs mis a jour !");};
+  const G={bg:"#F4F6F8",card:"#FFFFFF",border:"#E5E7EB",green:"#008060",greenL:"#ECFDF5",greenD:"#004C3F",gold:"#B8860B",text:"#1A1A2E",muted:"#6B7280",red:"#DC2626",redL:"#FEF2F2",blue:"#1D4ED8"};
+  const card={background:G.card,border:`1px solid ${G.border}`,borderRadius:18,padding:20,boxShadow:"0 1px 4px rgba(0,0,0,.06)"};
+  const inp={background:"#F9FAFB",border:`1.5px solid ${G.border}`,color:G.text,padding:"11px 14px",borderRadius:10,fontFamily:"inherit",fontSize:13,width:"100%",outline:"none"};
+  const btn=(c=G.green)=>({background:c,color:"#fff",border:"none",borderRadius:11,padding:"12px 20px",fontFamily:"inherit",fontSize:13,fontWeight:700,cursor:"pointer",width:"100%"});
+  const hd={fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:G.muted,marginBottom:14};
+  const TABS=[{id:"home",icon:"🏠",l:"Accueil"},{id:"ventes",icon:"💰",l:"Ventes"},{id:"articles",icon:"📦",l:"Articles"},{id:"planning",icon:"📅",l:"Planning"},{id:"stats",icon:"📊",l:"Stats"}];
+  return(
+    <div style={{minHeight:"100vh",background:G.bg,paddingBottom:84}}>
+      <style>{`
+        .tab-b{background:transparent;border:none;color:#9CA3AF;font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;padding:8px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;text-transform:uppercase;letter-spacing:.05em}
+        .tab-b.on{color:#008060}
+        .tab-b .ico{font-size:20px}
+        .pill{border:none;border-radius:99px;padding:4px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+        .toast{position:fixed;bottom:94px;left:50%;transform:translateX(-50%);padding:12px 26px;border-radius:14px;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.15)}
+        .toast.success{background:#008060;color:#fff}
+        .toast.error{background:#DC2626;color:#fff}
+        label{font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+        .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .prog-bar{background:#F3F4F6;border-radius:99px;height:7px;overflow:hidden;margin-top:6px}
+        .prog-fill{height:100%;border-radius:99px;transition:width .7s ease}
+        .kpi{background:#fff;border-radius:16px;padding:16px 18px;border:1px solid #E5E7EB;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+        input:focus,select:focus{outline:2px solid #008060}
+      `}</style>
+
+      <div style={{background:"#fff",borderBottom:"1px solid #E5E7EB",padding:"13px 18px",position:"sticky",top:0,zIndex:20,boxShadow:"0 1px 6px rgba(0,0,0,.06)"}}>
+        <div style={{maxWidth:680,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:36,height:36,background:"linear-gradient(135deg,#008060,#004C3F)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏪</div>
+            <div>
+              <div style={{fontWeight:900,fontSize:17}}>Mon Business</div>
+              <div style={{fontSize:10,color:G.muted}}>{dayFR()} · {dateFR()}</div>
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {streak>0&&<div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:99,padding:"4px 12px",fontSize:12,fontWeight:800,color:"#EA580C"}}>{streak}j 🔥</div>}
+            <div style={{textAlign:"right"}}>
+              <div style={{fontWeight:800,fontSize:13,color:todayOk?G.green:G.muted}}>{todayOk?`${tSales.length} vente${tSales.length>1?"s":""}  ✓`:"0 vente"}</div>
+              <div style={{fontSize:10,color:G.muted}}>aujourd'hui</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{maxWidth:680,margin:"0 auto",padding:"16px 14px"}}>
+        {tab==="home"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+          {dueAlerts.map(a=>(
+            <div key={a.id} style={{background:"#FFFBEB",border:"1.5px solid #F59E0B",borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:22}}>⏰</span>
+              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#92400E"}}>Rappel du jour</div><div style={{fontSize:13,color:"#78350F"}}>{a.text}</div></div>
+              <button onClick={()=>doneAlert(a.id)} style={{background:"#F59E0B",border:"none",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:800,color:"#fff",cursor:"pointer"}}>OK</button>
+            </div>
+          ))}
+          <div style={{background:todayOk?"linear-gradient(135deg,#004C3F,#008060)":"linear-gradient(135deg,#1A1A2E,#2D3748)",borderRadius:20,padding:"22px 22px 18px",color:"#fff",boxShadow:todayOk?"0 8px 32px rgba(0,128,96,.3)":"0 4px 16px rgba(0,0,0,.12)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".1em",opacity:.7,marginBottom:4}}>Objectif du jour</div>
+                <div style={{fontWeight:900,fontSize:20,lineHeight:1.2}}>{todayOk?`🔥 ${tSales.length} vente${tSales.length>1?"s":""} - Objectif atteint !`:"🎯 1 vente aujourd'hui"}</div>
+                <div style={{fontSize:12,opacity:.75,marginTop:4}}>{todayOk?`Profit : +${f0(tProfit)}€`:"Enregistre ta vente !"}</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontWeight:900,fontSize:28,lineHeight:1}}>{f0(totalCA)}€</div>
+                <div style={{fontSize:10,opacity:.65,marginTop:2}}>CA total</div>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {[{l:"Profit total",v:`+${f0(totalProfit)}€`},{l:"Ce mois",v:`+${f0(mProfit)}€`},{l:"Semaine",v:`+${f0(wProfit)}€`},{l:"Projection",v:`~${f0(projection)}€`}].map(k=>(
+                <div key={k.l} style={{background:"rgba(255,255,255,.12)",borderRadius:10,padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{fontWeight:800,fontSize:14,lineHeight:1}}>{k.v}</div>
+                  <div style={{fontSize:9,opacity:.7,textTransform:"uppercase",letterSpacing:".05em",marginTop:3}}>{k.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <TradingChart sales={sales}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div className="kpi" style={{borderLeft:`4px solid ${G.green}`}}>
+              <div style={{fontSize:10,fontWeight:700,color:G.muted,textTransform:"uppercase"}}>Marge moy.</div>
+              <div style={{fontWeight:900,fontSize:26,color:G.green,marginTop:2}}>+{f0(avgSale)}€</div>
+              <div style={{fontSize:11,color:G.muted}}>par vente</div>
+            </div>
+            <div className="kpi" style={{borderLeft:`4px solid ${G.gold}`}}>
+              <div style={{fontSize:10,fontWeight:700,color:G.muted,textTransform:"uppercase"}}>Streak</div>
+              <div style={{fontWeight:900,fontSize:26,color:G.gold,marginTop:2}}>{streak>0?`${streak}j 🔥`:"0j"}</div>
+              <div style={{fontSize:11,color:G.muted}}>consecutifs</div>
+            </div>
+            <div className="kpi" style={{borderLeft:"4px solid #7C3AED"}}>
+              <div style={{fontSize:10,fontWeight:700,color:G.muted,textTransform:"uppercase"}}>Regularite</div>
+              <div style={{fontWeight:900,fontSize:26,color:"#7C3AED",marginTop:2}}>{consistencyRate}%</div>
+              <div style={{fontSize:11,color:G.muted}}>{daysWithSale}j avec vente</div>
+            </div>
+            <div className="kpi" style={{borderLeft:`4px solid ${G.blue}`}}>
+              <div style={{fontSize:10,fontWeight:700,color:G.muted,textTransform:"uppercase"}}>Sell-through</div>
+              <div style={{fontWeight:900,fontSize:26,color:G.blue,marginTop:2}}>{sellThrough}%</div>
+              <div style={{fontSize:11,color:G.muted}}>articles vendus</div>
+            </div>
+          </div>
+          <div style={card}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={hd}>🎯 Objectifs</div>
+              <button onClick={()=>{setGoalVals({week:weekGoal,month:monthGoal});setGoalEdit(g=>!g);}} style={{background:"none",border:`1.5px solid ${G.border}`,borderRadius:8,padding:"4px 12px",fontSize:12,fontWeight:700,cursor:"pointer",color:G.muted}}>✏️</button>
+            </div>
+            {goalEdit?(
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div><label>Ventes / semaine</label><input style={inp} type="number" value={goalVals.week} onChange={e=>setGoalVals(g=>({...g,week:+e.target.value||1}))}/></div>
+                <div><label>Ventes / mois</label><input style={inp} type="number" value={goalVals.month} onChange={e=>setGoalVals(g=>({...g,month:+e.target.value||1}))}/></div>
+                <button style={btn()} onClick={saveGoals}>Sauvegarder</button>
+              </div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:16}}>
+                {[{l:"Semaine",d:wSales.length,g:weekGoal,c:G.green},{l:"Mois",d:mSales.length,g:monthGoal,c:G.gold},{l:"CA mois (obj 2000€)",d:Math.round(mCA),g:2000,c:"#7C3AED"}].map(o=>(
+                  <div key={o.l}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:13,fontWeight:700,marginBottom:4}}>
+                      <span>{o.l}</span><span style={{color:o.c}}>{o.d}{o.l.includes("CA")?"€":" ventes"} / {o.g}{o.l.includes("CA")?"€":""} {o.d>=o.g?"🔥":""}</span>
+                    </div>
+                    <div className="prog-bar"><div className="prog-fill" style={{width:`${Math.min(o.d/o.g*100,100)}%`,background:o.c}}/></div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={card}>
+            <div style={hd}>📦 Mes articles</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+              {Object.entries(STATUS_META).map(([k,m])=>(
+                <div key={k} style={{background:"#F9FAFB",borderRadius:12,padding:"14px 8px",textAlign:"center",border:`1.5px solid ${m.color}33`}}>
+                  <div style={{fontWeight:900,fontSize:26,color:m.color}}>{articles.filter(a=>a.status===k).length}</div>
+                  <div style={{fontSize:10,fontWeight:700,color:G.muted,textTransform:"uppercase",marginTop:2}}>{m.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={card}>
+            <div style={hd}>✅ Taches — {todayTasks.filter(t=>t.done).length}/{todayTasks.length}</div>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <input style={{...inp,flex:1}} placeholder="Nouvelle tache..." value={taskInput} onChange={e=>setTaskInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addTask()}/>
+              <button onClick={addTask} style={{...btn(),width:"auto",padding:"10px 16px"}}>+</button>
+            </div>
+            {todayTasks.length===0&&<div style={{color:G.muted,fontSize:13,textAlign:"center",padding:10}}>Aucune tache aujourd'hui</div>}
+            {todayTasks.map(t=>(
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:`1px solid ${G.border}`}}>
+                <div onClick={()=>toggleTask(t.id)} style={{width:22,height:22,borderRadius:6,border:`2px solid ${t.done?G.green:G.border}`,background:t.done?G.green:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                  {t.done&&<span style={{color:"#fff",fontSize:12,fontWeight:800}}>✓</span>}
+                </div>
+                <div style={{flex:1,fontSize:13,fontWeight:500,textDecoration:t.done?"line-through":"none",color:t.done?G.muted:G.text}}>{t.text}</div>
+                <button onClick={()=>delTask(t.id)} style={{background:"none",border:"none",color:"#D1D5DB",cursor:"pointer",fontSize:18}}>×</button>
+              </div>
+            ))}
+          </div>
+          {PLANNING[currentDay]&&(
+            <div style={card}>
+              <div style={hd}>📅 Programme — {currentDay}</div>
+              {PLANNING[currentDay].school&&<div style={{fontSize:12,fontWeight:700,color:"#D97706",background:"#FEF3C7",borderRadius:8,padding:"5px 12px",marginBottom:12,display:"inline-block"}}>Ecole : {PLANNING[currentDay].school}</div>}
+              {PLANNING[currentDay].slots.map((sl,i)=>(
+                <div key={i} style={{display:"flex",gap:10,padding:"9px 0",borderTop:i===0?"none":"1px solid #F3F4F6"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:G.green,minWidth:108,flexShrink:0}}>{sl.t}</div>
+                  <div style={{fontSize:13,fontWeight:500}}>{sl.a}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={card}>
+            <div style={hd}>🧮 Calculateur de marge</div>
+            <div className="row2" style={{marginBottom:10}}>
+              <div><label>Prix achat (€)</label><input style={inp} type="number" placeholder="0" value={calcBuy} onChange={e=>setCalcBuy(e.target.value)}/></div>
+              <div><label>Prix vente (€)</label><input style={inp} type="number" placeholder="0" value={calcSell} onChange={e=>setCalcSell(e.target.value)}/></div>
+            </div>
+            <div style={{marginBottom:10}}><label>Marge min. (%)</label><input style={inp} type="number" value={marginTarget} onChange={e=>setMarginTarget(e.target.value)}/></div>
+            {calcProfit!==null&&(
+              <div style={{background:calcOk?G.greenL:G.redL,border:`1.5px solid ${calcOk?"#6EE7B7":"#FCA5A5"}`,borderRadius:10,padding:"12px 16px"}}>
+                <div style={{fontWeight:800,fontSize:15,color:calcOk?G.greenD:G.red}}>{calcOk?"Investissement rentable !":"Marge insuffisante"}</div>
+                <div style={{fontSize:12,marginTop:4,color:G.muted}}>Profit net : <b>+{f2(calcProfit)}€</b> · Marge : <b>{calcPct?.toFixed(1)}%</b></div>
+              </div>
+            )}
+          </div>
+          <div style={card}>
+            <div style={hd}>⏰ Rappels</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
+              <div><label>Rappel</label><input style={inp} placeholder="Ex: Relancer acheteur Nike..." value={alertForm.text} onChange={e=>setAlertForm(f=>({...f,text:e.target.value}))}/></div>
+              <div><label>Date</label><input style={inp} type="date" value={alertForm.date} onChange={e=>setAlertForm(f=>({...f,date:e.target.value}))}/></div>
+              <button style={btn()} onClick={addAlert}>Ajouter le rappel</button>
+            </div>
+            {(alerts||[]).filter(a=>!a.done).length===0&&<div style={{color:G.muted,fontSize:13,textAlign:"center",padding:8}}>Aucun rappel actif</div>}
+            {(alerts||[]).filter(a=>!a.done).map(a=>(
+              <div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderTop:`1px solid ${G.border}`}}>
+                <div><div style={{fontSize:13,fontWeight:600}}>{a.text}</div><div style={{fontSize:11,color:G.muted}}>{a.date}</div></div>
+                <button onClick={()=>doneAlert(a.id)} style={{background:G.greenL,border:`1px solid #6EE7B7`,borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,color:G.green,cursor:"pointer"}}>✓</button>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+        {tab==="ventes"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={card}>
+            <div style={hd}>💰 Enregistrer une vente</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div><label>Article</label><input style={inp} placeholder="Ex: Nike Air Max T42" value={saleForm.title} onChange={e=>setSaleForm(f=>({...f,title:e.target.value}))}/></div>
+              <div className="row2">
+                <div><label>Plateforme</label><select style={inp} value={saleForm.platform} onChange={e=>setSaleForm(f=>({...f,platform:e.target.value}))}>{PLATFORMS.map(p=><option key={p}>{p}</option>)}</select></div>
+                <div><label>Date</label><input style={inp} type="date" value={saleForm.date} onChange={e=>setSaleForm(f=>({...f,date:e.target.value}))}/></div>
+              </div>
+              <div className="row2">
+                <div><label>Prix achat (€)</label><input style={inp} type="number" placeholder="0" value={saleForm.buyPrice} onChange={e=>setSaleForm(f=>({...f,buyPrice:e.target.value}))}/></div>
+                <div><label>Prix vente (€)</label><input style={inp} type="number" placeholder="0" value={saleForm.salePrice} onChange={e=>setSaleForm(f=>({...f,salePrice:e.target.value}))}/></div>
+              </div>
+              {saleForm.buyPrice&&saleForm.salePrice&&(
+                <div style={{background:G.greenL,border:"1.5px solid #6EE7B7",borderRadius:10,padding:"10px 14px",fontSize:13,fontWeight:700,color:G.greenD}}>
+                  Profit net : +{f2(parseFloat(saleForm.salePrice)-parseFloat(saleForm.buyPrice)-0.10)}€
+                </div>
+              )}
+              <button style={btn()} onClick={addSale}>Valider la vente ✓</button>
+            </div>
+          </div>
+          <div style={card}>
+            <div style={hd}>Historique — {sales.length} ventes</div>
+            {sales.map(s=>(
+              <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderTop:`1px solid ${G.border}`}}>
+                <div style={{flex:1,minWidth:0,paddingRight:12}}>
+                  <div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.title}</div>
+                  <div style={{fontSize:11,color:G.muted,marginTop:2}}>{s.platform} · {s.date}</div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <div style={{fontWeight:800,fontSize:14}}>{f2(s.salePrice)}€</div>
+                  <div style={{fontSize:12,fontWeight:700,color:G.green}}>+{f0(s.profit)}€</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+        {tab==="articles"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={card}>
+            <div style={hd}>📦 Ajouter un article</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div><label>Nom</label><input style={inp} placeholder="Ex: Jordan 1 Retro T41" value={artForm.title} onChange={e=>setArtForm(f=>({...f,title:e.target.value}))}/></div>
+              <div><label>Plateforme</label><select style={inp} value={artForm.platform} onChange={e=>setArtForm(f=>({...f,platform:e.target.value}))}>{PLATFORMS.map(p=><option key={p}>{p}</option>)}</select></div>
+              <button style={btn()} onClick={addArt}>Ajouter</button>
+            </div>
+          </div>
+          <div style={card}>
+            <div style={hd}>Suivi — {articles.length} articles</div>
+            <div style={{fontSize:11,color:G.muted,marginBottom:12}}>Appuie sur le statut pour avancer</div>
+            {articles.map(a=>(
+              <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 0",borderTop:`1px solid ${G.border}`}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.title}</div>
+                  <div style={{fontSize:11,color:G.muted,marginTop:2}}>{a.platform} · {a.date}</div>
+                </div>
+                <button className="pill" style={{background:STATUS_META[a.status].bg,color:STATUS_META[a.status].color,flexShrink:0}} onClick={()=>cycleStatus(a.id)}>{STATUS_META[a.status].label}</button>
+                <button onClick={()=>delArt(a.id)} style={{background:"none",border:"none",color:"#D1D5DB",cursor:"pointer",fontSize:18,paddingLeft:6}}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+        {tab==="planning"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{background:"linear-gradient(135deg,#004C3F,#008060)",borderRadius:18,padding:"16px 20px"}}>
+            <div style={{fontWeight:800,fontSize:15,color:"#fff",marginBottom:4}}>10 articles / semaine</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.8)"}}>Lun:2 · Mer:3 · Ven:2 · Sam:2 · Dim:1</div>
+          </div>
+          {Object.entries(PLANNING).map(([day,data])=>(
+            <div key={day} style={{...card,borderLeft:`4px solid ${day===currentDay?G.green:G.border}`,background:day===currentDay?"#F0FDF4":"#fff"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontWeight:800,fontSize:16,color:day===currentDay?G.green:G.text}}>
+                  {day} {day===currentDay&&<span style={{fontSize:10,background:G.greenL,color:G.green,borderRadius:99,padding:"2px 10px",fontWeight:700,marginLeft:6}}>Aujourd'hui</span>}
+                </div>
+                {data.school&&<div style={{fontSize:11,fontWeight:700,color:"#D97706",background:"#FEF3C7",borderRadius:8,padding:"3px 10px"}}>{data.school}</div>}
+              </div>
+              {data.slots.map((sl,i)=>(
+                <div key={i} style={{display:"flex",gap:10,padding:"9px 0",borderTop:i===0?"none":"1px solid #F3F4F6"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:G.green,minWidth:108,flexShrink:0}}>{sl.t}</div>
+                  <div style={{fontSize:13,fontWeight:500}}>{sl.a}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>}
+
+        {tab==="stats"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {[{l:"CA Total",v:`${f0(totalCA)}€`,c:G.blue},{l:"Profit Total",v:`+${f0(totalProfit)}€`,c:G.green},{l:"Ventes",v:sales.length,c:G.gold},{l:"Marge Moy.",v:`+${f0(avgSale)}€`,c:"#7C3AED"}].map(k=>(
+              <div key={k.l} className="kpi" style={{borderLeft:`4px solid ${k.c}`}}>
+                <div style={{fontSize:10,fontWeight:700,color:G.muted,textTransform:"uppercase"}}>{k.l}</div>
+                <div style={{fontWeight:900,fontSize:26,color:k.c,marginTop:4}}>{k.v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={card}>
+            <div style={hd}>Records</div>
+            {(()=>{
+              const bm=monthlyData.reduce((a,b)=>b.profit>a.profit?b:a,monthlyData[0]);
+              const bs=[...sales].sort((a,b)=>Number(b.profit)-Number(a.profit))[0];
+              return(
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:`1px solid ${G.border}`}}>
+                    <div><div style={{fontWeight:700,fontSize:13}}>Meilleur mois</div><div style={{fontSize:11,color:G.muted}}>{bm?.label}</div></div>
+                    <div style={{fontWeight:900,fontSize:20,color:G.gold}}>+{f0(bm?.profit||0)}€</div>
+                  </div>
+                  {bs&&<div style={{display:"flex",justifyContent:"space-between",padding:"10px 0"}}>
+                    <div><div style={{fontWeight:700,fontSize:13}}>Meilleure vente</div><div style={{fontSize:11,color:G.muted,maxWidth:200,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{bs.title}</div></div>
+                    <div style={{fontWeight:900,fontSize:20,color:G.gold}}>+{f0(bs.profit)}€</div>
+                  </div>}
+                </div>
+              );
+            })()}
+          </div>
+          <div style={card}>
+            <div style={hd}>Profit mensuel</div>
+            <div style={{display:"flex",gap:6,alignItems:"flex-end",height:100,marginBottom:10}}>
+              {monthlyData.map((m,i)=>(
+                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                  <div style={{fontSize:9,fontWeight:700,color:G.green,minHeight:14}}>{m.profit>0?`+${f0(m.profit)}`:""}</div>
+                  <div style={{width:"100%",background:"#F3F4F6",borderRadius:6,height:72,display:"flex",alignItems:"flex-end",overflow:"hidden"}}>
+                    <div style={{width:"100%",background:`linear-gradient(180deg,${G.green},#004C3F)`,borderRadius:6,height:`${(m.profit/maxBar)*100}%`}}/>
+                  </div>
+                  <div style={{fontSize:9,fontWeight:700,color:G.muted}}>{m.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={card}>
+            <div style={hd}>Par periode</div>
+            {[{l:"Aujourd'hui",s:tSales,p:tProfit,c:"#F59E0B"},{l:"Semaine",s:wSales,p:wProfit,c:G.green},{l:"Mois",s:mSales,p:mProfit,c:"#7C3AED"},{l:"Total",s:sales,p:totalProfit,c:G.blue}].map(p=>(
+              <div key={p.l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderTop:`1px solid ${G.border}`}}>
+                <div><div style={{fontWeight:700,fontSize:13}}>{p.l}</div><div style={{fontSize:11,color:G.muted}}>{p.s.length} vente{p.s.length!==1?"s":""}</div></div>
+                <div style={{fontWeight:900,fontSize:22,color:p.c}}>+{f0(p.p)}€</div>
+              </div>
+            ))}
+          </div>
+          <div style={card}>
+            <div style={hd}>Top ventes</div>
+            {[...sales].sort((a,b)=>Number(b.profit)-Number(a.profit)).slice(0,5).map((s,i)=>(
+              <div key={s.id} style={{display:"flex",gap:12,alignItems:"center",padding:"10px 0",borderTop:i>0?`1px solid ${G.border}`:"none"}}>
+                <div style={{fontWeight:900,fontSize:17,color:["#F59E0B","#9CA3AF","#B45309"][i]||G.muted,width:26}}>#{i+1}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.title}</div>
+                  <div style={{fontSize:11,color:G.muted}}>{s.platform} · {s.date}</div>
+                </div>
+                <div style={{fontWeight:800,fontSize:15,color:G.green,flexShrink:0}}>+{f0(s.profit)}€</div>
+              </div>
+            ))}
+          </div>
+          <div style={card}>
+            <div style={hd}>Par plateforme</div>
+            {PLATFORMS.map(p=>{
+              const ps=sales.filter(s=>s.platform===p);
+              if(!ps.length)return null;
+              return(
+                <div key={p} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderTop:`1px solid ${G.border}`}}>
+                  <div><div style={{fontWeight:700,fontSize:13}}>{p}</div><div style={{fontSize:11,color:G.muted}}>{ps.length} ventes</div></div>
+                  <div style={{fontWeight:900,fontSize:20,color:G.green}}>+{f0(ps.reduce((a,s)=>a+Number(s.profit),0))}€</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>}
+      </div>
+
+      <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",borderTop:"1px solid #E5E7EB",display:"flex",padding:"8px 0 16px",zIndex:20,boxShadow:"0 -2px 16px rgba(0,0,0,.07)"}}>
+        {TABS.map(t=>(
+          <button key={t.id} className={`tab-b ${tab===t.id?"on":""}`} onClick={()=>setTab(t.id)}>
+            <span className="ico">{t.icon}</span>{t.l}
+          </button>
+        ))}
+      </div>
+      {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
